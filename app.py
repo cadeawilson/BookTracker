@@ -7,7 +7,7 @@ import os.path
 st.set_page_config(page_title="Book Tracker", layout="wide")
 
 # App title and description
-st.title("📚 Book Tracker")
+st.title("📚 Readings Reaped - Book Tracker")
 st.markdown("Keep track of all the books you've read and your thoughts about them.")
 
 # Initialize session state for the book database if it doesn't exist
@@ -44,7 +44,8 @@ with col1:
                 'Date Finished': date_finished.strftime('%Y-%m-%d'),
                 'Reader': reader,
                 'Rating': rating,
-                'Notes': notes
+                'Notes': notes,
+                'Stars': '⭐' * rating  # Add a new column for star display
             }
             
             st.session_state.book_df = pd.concat([
@@ -83,20 +84,30 @@ with col2:
     if rating_filter:
         filtered_df = filtered_df[filtered_df['Rating'].isin(rating_filter)]
     
+    # Ensure the Stars column exists for existing data
+    if 'Stars' not in filtered_df.columns and not filtered_df.empty:
+        filtered_df['Stars'] = filtered_df['Rating'].apply(lambda x: '⭐' * int(x))
+    
     # Display the filtered dataframe
     if not filtered_df.empty:
+        display_df = filtered_df.sort_values(by='Date Finished', ascending=False)
+        
+        # Choose columns to display
+        display_columns = ['Title', 'Author', 'Date Finished', 'Reader', 'Stars', 'Notes']
+        display_columns = [col for col in display_columns if col in display_df.columns]
+        
         st.dataframe(
-            filtered_df.sort_values(by='Date Finished', ascending=False),
+            display_df[display_columns],
             use_container_width=True,
             column_config={
-                "Rating": st.column_config.NumberColumn(
-                    "Rating",
-                    format="⭐" * 5,
-                ),
                 "Notes": st.column_config.TextColumn(
                     "Notes",
                     width="large",
                 ),
+                "Stars": st.column_config.TextColumn(
+                    "Rating",
+                    width="medium",
+                )
             }
         )
     else:
@@ -112,4 +123,4 @@ st.download_button(
 
 # Add footer
 st.markdown("---")
-st.markdown("*Book Tracker*")
+st.markdown("*Reads Reaped - Book Tracker*")
