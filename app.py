@@ -7,8 +7,8 @@ import os.path
 st.set_page_config(page_title="Book Tracker", layout="wide")
 
 # App title and description
-st.title("📚 Readings Reaped - Book Tracker")
-st.markdown("Keep track of all the books you've read and your thoughts about them.")
+st.title("📚 Reaped Reads - Book Tracker")
+st.markdown("Keep track of all the reads you've reaped and your thoughts about them.")
 
 # Initialize session state for the book database if it doesn't exist
 if 'book_df' not in st.session_state:
@@ -19,6 +19,10 @@ if 'book_df' not in st.session_state:
         st.session_state.book_df = pd.DataFrame(columns=[
             'Title', 'Author', 'Date Finished', 'Reader', 'Rating', 'Notes'
         ])
+
+# Function to save the dataframe to CSV
+def save_dataframe():
+    st.session_state.book_df.to_csv('book_tracker_data.csv', index=False)
 
 # Create two columns for layout
 col1, col2 = st.columns([1, 2])
@@ -54,7 +58,7 @@ with col1:
             ], ignore_index=True)
             
             # Save to CSV
-            st.session_state.book_df.to_csv('book_tracker_data.csv', index=False)
+            save_dataframe()
             st.success("Book added successfully!")
 
 # Display the book database
@@ -90,7 +94,7 @@ with col2:
     
     # Display the filtered dataframe
     if not filtered_df.empty:
-        display_df = filtered_df.sort_values(by='Date Finished', ascending=False)
+        display_df = filtered_df.sort_values(by='Date Finished', ascending=False).reset_index()
         
         # Choose columns to display
         display_columns = ['Title', 'Author', 'Date Finished', 'Reader', 'Stars', 'Notes']
@@ -110,6 +114,31 @@ with col2:
                 )
             }
         )
+        
+        # Delete functionality
+        st.subheader("Delete a Book")
+        
+        # Create a selection for books to delete
+        book_options = [f"{i+1}. {row['Title']} by {row['Author']}" for i, row in display_df.iterrows()]
+        book_to_delete = st.selectbox("Select a book to delete:", [""] + book_options)
+        
+        if book_to_delete:
+            # Extract the index from the selection
+            selected_index = int(book_to_delete.split('.')[0]) - 1
+            
+            # Get the original index from the filtered dataframe
+            original_index = display_df.iloc[selected_index]['index']
+            
+            # Show book details for confirmation
+            st.write(f"**Selected book:** {display_df.iloc[selected_index]['Title']} by {display_df.iloc[selected_index]['Author']}")
+            
+            # Confirmation button
+            if st.button("Delete Selected Book", type="primary"):
+                # Delete the book from the main dataframe
+                st.session_state.book_df = st.session_state.book_df.drop(original_index).reset_index(drop=True)
+                save_dataframe()
+                st.success("Book deleted successfully!")
+                st.experimental_rerun()  # Refresh the app to update the display
     else:
         st.info("No books added yet. Use the form to add your first book!")
 
@@ -123,4 +152,4 @@ st.download_button(
 
 # Add footer
 st.markdown("---")
-st.markdown("*Reads Reaped - Book Tracker*")
+st.markdown("*Reading Reaper Book Tracker*")
