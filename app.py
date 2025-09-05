@@ -7,7 +7,7 @@ import os.path
 st.set_page_config(page_title="Book Tracker", layout="wide")
 
 # App title and description
-st.title("📚 Family Book Tracker")
+st.title("📚 Book Tracker")
 st.markdown("Keep track of all the books you've read and your thoughts about them.")
 
 # Initialize session state for the book database if it doesn't exist
