@@ -10,6 +10,49 @@ st.set_page_config(page_title="Book Tracker", layout="wide")
 st.title("💀📚💀 Reaped Reads - Book Tracker")
 st.markdown("Keep track of all the reads you've reaped and your thoughts about them.")
 
+# Goodreads CSV Importer
+st.subheader("📥 Import Goodreads CSV")
+
+uploaded_file = st.file_uploader("Upload your Goodreads export CSV", type="csv")
+
+if uploaded_file:
+    goodreads_df = pd.read_csv(uploaded_file)
+
+    # Only select relevant columns
+    columns_map = {
+        'Title': 'Title',
+        'Author': 'Author',
+        'Date Read': 'Date Finished',
+        'My Rating': 'Rating',
+        'Bookshelves': 'Reader',
+        'My Review': 'Notes'
+    }
+
+    missing_columns = [col for col in columns_map.keys() if col not in goodreads_df.columns]
+    if missing_columns:
+        st.error(f"Missing columns in uploaded file: {missing_columns}")
+    else:
+        # Prepare imported data
+        imported_df = goodreads_df[list(columns_map.keys())].rename(columns=columns_map)
+
+        # Clean and format data
+        imported_df['Rating'] = imported_df['Rating'].fillna(0).astype(int)
+        imported_df['Date Finished'] = pd.to_datetime(imported_df['Date Finished'], errors='coerce').dt.strftime('%Y-%m-%d')
+        imported_df['Stars'] = imported_df['Rating'].apply(lambda x: '⭐' * int(x))
+
+        # Drop empty titles
+        imported_df = imported_df[imported_df['Title'].notna()]
+
+        # Ask if user wants to add to current data
+        if st.checkbox("Add imported data to your current book tracker?"):
+            st.session_state.book_df = pd.concat(
+                [st.session_state.book_df, imported_df],
+                ignore_index=True
+            ).drop_duplicates(subset=['Title', 'Author', 'Date Finished'])
+
+            save_dataframe()
+            st.success("Imported books successfully added to your tracker!")
+
 # Initialize session state for the book database if it doesn't exist
 if 'book_df' not in st.session_state:
     # Check if a saved CSV exists
